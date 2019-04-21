@@ -5,6 +5,8 @@ import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.Font;
 import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -45,13 +47,13 @@ public class LevelOne extends JFrame {
 			"2026", "2027", "2028", "2029", "2030" };
 	JTable table;
 
-	private static final int BOOLEAN_COLUMN = 3;
+	private static final int BOOLEAN_COLUMN = 9;
 
 	Connection connection = null;
 	PreparedStatement preparedStatement = null;
 	ResultSet resultSet = null;
 	DefaultTableModel model;
-
+	
 	public class CheckBoxModelListener implements TableModelListener {
 
 		public void tableChanged(TableModelEvent e) {
@@ -80,7 +82,7 @@ public class LevelOne extends JFrame {
 					LevelOne frame = new LevelOne();
 					frame.setVisible(true);
 					frame.setTitle("Level 1");
-					java.awt.Image icon = Toolkit.getDefaultToolkit().getImage("./resources/Hilti_opt.png");
+					java.awt.Image icon = Toolkit.getDefaultToolkit().getImage(getClass().getClassLoader().getResource("Hilti_opt.png"));
 					frame.setIconImage(icon);
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -95,8 +97,7 @@ public class LevelOne extends JFrame {
 	public LevelOne() {
 		connection = ConnectionUtil.connectdb();
 		JTable table = createTable();
-		addRowToJTable(table);
-		table.getModel().addTableModelListener(new CheckBoxModelListener());
+		
 		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 		setBounds(0, 0, screenSize.width, screenSize.height);
@@ -129,7 +130,7 @@ public class LevelOne extends JFrame {
 		comboBox_2.setBounds(588, 28, 100, 30);
 		panel.add(comboBox_2);
 		comboBox_2.setBackground(new Color(255, 255, 255));
-
+		
 		@SuppressWarnings({ "rawtypes", "unchecked" })
 		JComboBox comboBox_1 = new JComboBox(months);
 		comboBox_1.setBounds(270, 28, 100, 30);
@@ -146,6 +147,42 @@ public class LevelOne extends JFrame {
 		btnShow.setFont(new Font("Tahoma", Font.PLAIN, 18));
 		btnShow.setBounds(1234, 28, 115, 36);
 		panel.add(btnShow);
+		//	String vipvalue1=comboBox_VIP_1.getSelectedItem().toString();
+
+		btnShow.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+					System.out.println("Display Clicked");
+					String month = comboBox_1.getSelectedItem().toString();
+					String year = comboBox_2.getSelectedItem().toString();
+					String cycle = comboBox.getSelectedItem().toString();
+					System.out.println(month + year + cycle);
+					// Start Date
+					// End Date
+					// Month - January
+					// Year - 2019
+					// 01-Jan-2019
+					String startDate = "";
+					String endDate = "";
+					switch (month) {
+					case "January":
+						startDate = "01/" + 01 + "/" + year;
+						endDate = "31/" + 01 + "/" + year;
+						break;
+						
+					case "February":
+						startDate = "01/" + 02 + "/" + year;
+						endDate = "29/" + 02 + "/" + year;
+						break;
+
+					default:
+						break;
+					}
+					// Between Query
+					// Select * from P_Payment where PaymentDate Between startDate And endDate And PaymentCycle = cycle;
+					addRowToJTable(table, startDate, endDate, cycle);
+					table.getModel().addTableModelListener(new CheckBoxModelListener());
+			}
+		});
 
 		JButton btnSave = new JButton("Save");
 		btnSave.setFont(new Font("Tahoma", Font.PLAIN, 18));
@@ -182,35 +219,61 @@ public class LevelOne extends JFrame {
 
 	}
 
-	public void addRowToJTable(JTable jTable) {
+	public void addRowToJTable(JTable jTable, String startDate, String endDate, String cycle) {
+//		String[] cols = { "SNo", "Invoice Name", "Vendor Code", "Vendor Name", "Invoice Date", "Invoice Amount", "Amount Payable", "Payment Date", "Payment Cycle", "UserFlag" };
+
 		model = (DefaultTableModel) jTable.getModel();
-		List<Invoice> list = getInvoice();
+		List<Invoice> list = getInvoice(startDate, endDate, cycle);
 		Object rowData[] = new Object[4];
 		for (int i = 0; i < list.size(); i++) {
-			rowData[0] = list.get(i).getId();
-			rowData[1] = list.get(i).getName();
-			rowData[2] = list.get(i).getBranch();
-			rowData[3] = list.get(i).getStatus();
+			rowData[0] = list.get(i).getSno();
+			rowData[1] = list.get(i).getInvoiceName();
+			rowData[2] = list.get(i).getVendorCode();
+			rowData[3] = list.get(i).getVendorName();
+			rowData[4] = list.get(i).getInvoiceDate();
+			rowData[5] = list.get(i).getInvoiceAmount();
+			rowData[6] = list.get(i).getAmountPayable();
+			rowData[7] = list.get(i).getPaymentDate();
+			rowData[8] = list.get(i).getPaymentCycle();
+			rowData[9] = list.get(i).getLevel1Flag();
+			
 			model.addRow(rowData);
 		}
 
 	}
 
-	public List<Invoice> getInvoice() {
+	public List<Invoice> getInvoice(String startDate, String endDate, String cycle) {
 
 		List<Invoice> invoice = new ArrayList<Invoice>();
-
-		String sql = "SELECT * FROM invoice";
+//Select * from P_Payment where PaymentDate Between startDate And endDate And PaymentCycle = cycle
+		String sql = "SELECT * FROM P_Payment_approval_tracking where paymentCycle = " + cycle + " AND paymentDate BETWEEN " + startDate + " AND " + endDate;
 
 		try {
 			preparedStatement = connection.prepareStatement(sql);
 			resultSet = preparedStatement.executeQuery();
 			while (resultSet.next()) {
-				Integer id = resultSet.getInt("id");
-				String bankName = resultSet.getString("name");
-				String bankBranch = resultSet.getString("branch");
-				Boolean status = resultSet.getBoolean("status");
-				invoice.add(new Invoice(id, bankName, bankBranch, status));
+				Integer sno = resultSet.getInt("sno");
+				String invoiceName = resultSet.getString("invoiceName");
+				String vendorCode = resultSet.getString("vendorCode");
+				String vendorName = resultSet.getString("vendorName");
+				String invoiceDate = resultSet.getString("invoiceDate");
+				String invoiceAmount = resultSet.getString("invoiceAmount");
+				String amountPayable = resultSet.getString("amountPayable");
+				String paymentDate = resultSet.getString("paymentDate");
+				String paymentCycle = resultSet.getString("paymentCycle");
+				String userFlag = resultSet.getString("level1Flag");
+				Invoice invoiceFromDb = new Invoice();
+				invoiceFromDb.setSno(sno);
+				invoiceFromDb.setVendorCode(vendorCode);
+				invoiceFromDb.setVendorName(vendorName);
+				invoiceFromDb.setInvoiceName(invoiceName);
+				invoiceFromDb.setInvoiceDate(invoiceDate);
+				invoiceFromDb.setInvoiceAmount(invoiceAmount);
+				invoiceFromDb.setAmountPayable(amountPayable);
+				invoiceFromDb.setPaymentCycle(paymentCycle);
+				invoiceFromDb.setPaymentDate(paymentDate);
+				invoiceFromDb.setLevel1Flag(userFlag);
+				invoice.add(invoiceFromDb);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -220,7 +283,7 @@ public class LevelOne extends JFrame {
 
 	public void updateStatus(Boolean status, Integer id) {
 
-		String sql = "UPDATE invoice SET status = ? WHERE id = ?";
+		String sql = "UPDATE P_Payment_approval_tracking SET status = ? WHERE id = ?";
 
 		try {
 			preparedStatement = connection.prepareStatement(sql);
@@ -236,7 +299,8 @@ public class LevelOne extends JFrame {
 	}
 
 	private JTable createTable() {
-		String[] cols = { "Id", "BankName", "BranchName", "Action" };
+
+		String[] cols = { "SNo", "Invoice Name", "Vendor Code", "Vendor Name", "Invoice Date", "Invoice Amount", "Amount Payable", "Payment Date", "Payment Cycle", "UserFlag" };
 
 		DefaultTableModel model = new DefaultTableModel(new Object[][] {}, cols) {
 			@Override
