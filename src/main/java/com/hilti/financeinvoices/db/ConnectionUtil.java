@@ -14,7 +14,7 @@ public class ConnectionUtil {
 	public static Connection connectdb() {
 		try {
 			Class.forName("org.sqlite.JDBC");
-			Connection conn = DriverManager.getConnection("jdbc:sqlite:FTR2.db");
+			Connection conn = DriverManager.getConnection("jdbc:sqlite:/opt/Projects/Personal/w1/financeinvoices/FTR2.db");
 			return conn;
 		} catch (Exception e) {
 			JOptionPane.showMessageDialog(null, e);

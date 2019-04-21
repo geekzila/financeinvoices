@@ -11,7 +11,7 @@ public class Invoice {
 	private String amountPayable;
 	private String paymentDate;
 	private String paymentCycle;
-	private String level1Flag;
+	private Boolean level1Flag;
 	private String levelFlagDate;
 	private String level1UserName;
 	private String level2Flag;
@@ -151,14 +151,14 @@ public class Invoice {
 	/**
 	 * @return the level1Flag
 	 */
-	public String getLevel1Flag() {
+	public Boolean getLevel1Flag() {
 		return level1Flag;
 	}
 
 	/**
 	 * @param level1Flag the level1Flag to set
 	 */
-	public void setLevel1Flag(String level1Flag) {
+	public void setLevel1Flag(Boolean level1Flag) {
 		this.level1Flag = level1Flag;
 	}
 

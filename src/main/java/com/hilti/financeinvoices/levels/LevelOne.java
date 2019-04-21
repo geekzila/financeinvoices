@@ -96,7 +96,7 @@ public class LevelOne extends JFrame {
 	 */
 	public LevelOne() {
 		connection = ConnectionUtil.connectdb();
-		JTable table = createTable();
+		table = createTable();
 		
 		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
@@ -151,11 +151,9 @@ public class LevelOne extends JFrame {
 
 		btnShow.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-					System.out.println("Display Clicked");
 					String month = comboBox_1.getSelectedItem().toString();
 					String year = comboBox_2.getSelectedItem().toString();
 					String cycle = comboBox.getSelectedItem().toString();
-					System.out.println(month + year + cycle);
 					// Start Date
 					// End Date
 					// Month - January
@@ -172,6 +170,16 @@ public class LevelOne extends JFrame {
 					case "February":
 						startDate = "01/" + 02 + "/" + year;
 						endDate = "29/" + 02 + "/" + year;
+						break;
+						
+					case "March":
+						startDate = "01/" + 03 + "/" + year;
+						endDate = "31/" + 03 + "/" + year;
+						break;
+						
+					case "April":
+						startDate = "01/" + 04 + "/" + year;
+						endDate = "31/" + 04 + "/" + year;
 						break;
 
 					default:
@@ -224,7 +232,7 @@ public class LevelOne extends JFrame {
 
 		model = (DefaultTableModel) jTable.getModel();
 		List<Invoice> list = getInvoice(startDate, endDate, cycle);
-		Object rowData[] = new Object[4];
+		Object rowData[] = new Object[10];
 		for (int i = 0; i < list.size(); i++) {
 			rowData[0] = list.get(i).getSno();
 			rowData[1] = list.get(i).getInvoiceName();
@@ -246,10 +254,13 @@ public class LevelOne extends JFrame {
 
 		List<Invoice> invoice = new ArrayList<Invoice>();
 //Select * from P_Payment where PaymentDate Between startDate And endDate And PaymentCycle = cycle
-		String sql = "SELECT * FROM P_Payment_approval_tracking where paymentCycle = " + cycle + " AND paymentDate BETWEEN " + startDate + " AND " + endDate;
-
+		//String sql = "SELECT * FROM payment_approval_tracking where paymentCycle = " + cycle + " AND paymentDate BETWEEN " + startDate + " AND " + endDate;
+		String sql = "SELECT * FROM payment_approval_tracking where paymentCycle = ? AND paymentDate BETWEEN ? AND ?";
 		try {
 			preparedStatement = connection.prepareStatement(sql);
+			preparedStatement.setString(1, cycle);
+			preparedStatement.setString(2, startDate);
+			preparedStatement.setString(3, endDate);
 			resultSet = preparedStatement.executeQuery();
 			while (resultSet.next()) {
 				Integer sno = resultSet.getInt("sno");
@@ -262,6 +273,10 @@ public class LevelOne extends JFrame {
 				String paymentDate = resultSet.getString("paymentDate");
 				String paymentCycle = resultSet.getString("paymentCycle");
 				String userFlag = resultSet.getString("level1Flag");
+				Boolean flag = false;
+				if(!userFlag.equals("0")) {
+					flag = true;
+				}
 				Invoice invoiceFromDb = new Invoice();
 				invoiceFromDb.setSno(sno);
 				invoiceFromDb.setVendorCode(vendorCode);
@@ -272,7 +287,7 @@ public class LevelOne extends JFrame {
 				invoiceFromDb.setAmountPayable(amountPayable);
 				invoiceFromDb.setPaymentCycle(paymentCycle);
 				invoiceFromDb.setPaymentDate(paymentDate);
-				invoiceFromDb.setLevel1Flag(userFlag);
+				invoiceFromDb.setLevel1Flag(flag);
 				invoice.add(invoiceFromDb);
 			}
 		} catch (Exception e) {
@@ -283,12 +298,16 @@ public class LevelOne extends JFrame {
 
 	public void updateStatus(Boolean status, Integer id) {
 
-		String sql = "UPDATE P_Payment_approval_tracking SET status = ? WHERE id = ?";
+		String sql = "UPDATE payment_approval_tracking SET level1Flag = ? WHERE sno = ?";
 
 		try {
 			preparedStatement = connection.prepareStatement(sql);
-			preparedStatement.setBoolean(1, status);
-			preparedStatement.setInt(2, id);
+			if(status) {
+				preparedStatement.setString(1, "1");
+			} else {
+				preparedStatement.setString(1, "0");
+			}
+			preparedStatement.setString(2, String.valueOf(id));
 			int updated = preparedStatement.executeUpdate();
 			if (updated != 0) {
 				System.out.println("Updated Successfully");
